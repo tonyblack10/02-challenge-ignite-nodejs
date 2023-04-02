@@ -33,17 +33,46 @@ export async function mealsRoutes(app: FastifyInstance) {
       'description',
       'exists_on_diet',
       'date',
+      'created_at',
+      'updated_at',
     )
 
     return reply.send(meals)
   })
 
-  app.delete('/:id', async (request, reply) => {
-    const deleteTransactionParamsSchema = z.object({
+  app.get('/:id', async (request, reply) => {
+    const getMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
 
-    const { id } = deleteTransactionParamsSchema.parse(request.params)
+    const { id } = getMealParamsSchema.parse(request.params)
+
+    const meal = await knex('meals')
+      .select(
+        'id',
+        'name',
+        'description',
+        'exists_on_diet',
+        'date',
+        'created_at',
+        'updated_at',
+      )
+      .where('id', id)
+      .first()
+
+    if (!meal) {
+      return reply.status(404).send()
+    }
+
+    return reply.send(meal)
+  })
+
+  app.delete('/:id', async (request, reply) => {
+    const deleteMealParamsSchema = z.object({
+      id: z.string().uuid(),
+    })
+
+    const { id } = deleteMealParamsSchema.parse(request.params)
 
     const mealExists = await knex('meals').select('id').where('id', id).first()
 
