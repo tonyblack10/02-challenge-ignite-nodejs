@@ -25,4 +25,16 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     return reply.status(201).send()
   })
+
+  app.get('/', async (_, reply) => {
+    const meals = await knex('meals').select(
+      'id',
+      'name',
+      'description',
+      'exists_on_diet',
+      'date',
+    )
+
+    return reply.send(meals)
+  })
 }
