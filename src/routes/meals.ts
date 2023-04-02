@@ -3,17 +3,18 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { knex } from '../database'
 
+const mealBodySchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  date: z.string(),
+  existsOnDiet: z.boolean(),
+})
+
 export async function mealsRoutes(app: FastifyInstance) {
   app.post('/', async (request, reply) => {
-    const createMealBodySchema = z.object({
-      name: z.string(),
-      description: z.string(),
-      date: z.string(),
-      existsOnDiet: z.boolean(),
-    })
-
-    const { name, description, date, existsOnDiet } =
-      createMealBodySchema.parse(request.body)
+    const { name, description, date, existsOnDiet } = mealBodySchema.parse(
+      request.body,
+    )
 
     await knex('meals').insert({
       id: randomUUID(),
@@ -81,6 +82,36 @@ export async function mealsRoutes(app: FastifyInstance) {
     }
 
     await knex('meals').where('id', id).delete()
+
+    return reply.status(204).send()
+  })
+
+  app.put('/:id', async (request, reply) => {
+    const updateMealParamsSchema = z.object({
+      id: z.string().uuid(),
+    })
+
+    const { id } = updateMealParamsSchema.parse(request.params)
+
+    const { name, description, date, existsOnDiet } = mealBodySchema.parse(
+      request.body,
+    )
+
+    const mealExists = await knex('meals').select('id').where('id', id).first()
+
+    if (!mealExists) {
+      return reply.status(404).send()
+    }
+
+    await knex('meals')
+      .update({
+        name,
+        description,
+        date,
+        exists_on_diet: existsOnDiet,
+        updated_at: new Date().toISOString(),
+      })
+      .where('id', id)
 
     return reply.status(204).send()
   })
