@@ -12,6 +12,13 @@ export async function register(request: FastifyRequest, reply: FastifyReply) {
   })
 
   const { name, email, password } = createUserBodySchema.parse(request.body)
+
+  const userAlreadyExists = await knex('users').select('*').where({ email })
+
+  if (userAlreadyExists) {
+    return reply.status(409).send({ message: 'User Already Exists' })
+  }
+
   const password_hash = await hash(password, 6)
 
   await knex('users').insert({
