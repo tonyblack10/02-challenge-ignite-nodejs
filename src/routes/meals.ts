@@ -115,4 +115,29 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     return reply.status(204).send()
   })
+
+  app.get('/statistics', async (request, reply) => {
+    const statistics = await knex('meals')
+      .select(knex.raw('count(*) as total'))
+      .select(
+        knex.raw(
+          'SUM(CASE WHEN exists_on_diet = 1 THEN 1 ELSE 0 END) as totalOnDiet',
+        ),
+      )
+      .select(
+        knex.raw(
+          'SUM(CASE WHEN exists_on_diet = 0 THEN 1 ELSE 0 END) as totalNotOnDiet',
+        ),
+      )
+      .where(knex.raw(1))
+      .first()
+
+    const [result] = await knex.raw(
+      `select max(_count) as bestSequel from (select count(*) as _count from 
+        (select meals.*, (row_number() over (order by created_at) - row_number() over (partition by exists_on_diet order by created_at)) as grp 
+        from meals) meals where exists_on_diet = 1 group by grp, exists_on_diet)`,
+    )
+
+    return reply.send({ ...statistics, bestSequel: result.bestSequel })
+  })
 }
