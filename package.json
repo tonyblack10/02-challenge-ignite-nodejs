@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/jwt": "6.7.1",
     "bcryptjs": "2.4.3",
     "dotenv": "16.0.3",
     "fastify": "4.15.0",
