@@ -144,28 +144,42 @@ export async function mealsRoutes(app: FastifyInstance) {
   app.get('/statistics', async (request, reply) => {
     const userId = request.user.sign.sub
 
-    const statistics = await knex('meals')
-      .select(knex.raw('count(*) as total'))
-      .select(
-        knex.raw(
-          'SUM(CASE WHEN exists_on_diet = 1 THEN 1 ELSE 0 END) as totalOnDiet',
-        ),
-      )
-      .select(
-        knex.raw(
-          'SUM(CASE WHEN exists_on_diet = 0 THEN 1 ELSE 0 END) as totalNotOnDiet',
-        ),
-      )
-      .where(knex.raw(1))
-      .andWhere('user_id', userId)
+    const totalMealsOnDiet = await knex('meals')
+      .where({ user_id: userId, exists_on_diet: true })
+      .count('id', { as: 'total' })
       .first()
 
-    const [result] = await knex.raw(
-      `select max(_count) as bestSequel from (select count(*) as _count from 
-        (select meals.*, (row_number() over (order by created_at) - row_number() over (partition by exists_on_diet order by created_at)) as grp 
-        from meals) meals where user_id = '${userId}' and exists_on_diet = 1 group by grp, exists_on_diet)`,
+    const totalMealsOffDiet = await knex('meals')
+      .where({ user_id: userId, exists_on_diet: false })
+      .count('id', { as: 'total' })
+      .first()
+
+    const totalMeals = await knex('meals')
+      .where({ user_id: userId })
+      .orderBy('date', 'desc')
+
+    const { bestOnDietSequence } = totalMeals.reduce(
+      (acc, meal) => {
+        if (meal.exists_on_diet) {
+          acc.currentSequence += 1
+        } else {
+          acc.currentSequence = 0
+        }
+
+        if (acc.currentSequence > acc.bestOnDietSequence) {
+          acc.bestOnDietSequence = acc.currentSequence
+        }
+
+        return acc
+      },
+      { bestOnDietSequence: 0, currentSequence: 0 },
     )
 
-    return reply.send({ ...statistics, bestSequel: result.bestSequel })
+    return reply.send({
+      totalMeals: totalMeals.length,
+      totalMealsOnDiet: totalMealsOnDiet?.total,
+      totalMealsOffDiet: totalMealsOffDiet?.total,
+      bestOnDietSequence,
+    })
   })
 }
