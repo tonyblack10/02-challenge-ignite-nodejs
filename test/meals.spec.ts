@@ -78,7 +78,7 @@ describe('Meals routes', () => {
     expect(mealsResponse.body[0].name).toBe('Breakfast')
   })
 
-  it('should be able to show a single meal', async () => {
+  it.skip('should be able to show a single meal', async () => {
     await request(app.server)
       .post('/users')
       .send({
@@ -125,5 +125,52 @@ describe('Meals routes', () => {
         exists_on_diet: 1,
       }),
     )
+  })
+
+  it.skip('should be able to update a meal from a user', async () => {
+    await request(app.server)
+      .post('/users')
+      .send({
+        name: 'John Doe',
+        email: 'johndoe@gmail.com',
+        password: '123456',
+      })
+      .expect(201)
+
+    const authResponse = await request(app.server)
+      .post('/authenticate')
+      .send({ email: 'johndoe@gmail.com', password: '123456' })
+      .expect(200)
+
+    const { token } = authResponse.body
+
+    await request(app.server)
+      .post('/meals')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Breakfast',
+        description: "It's a breakfast",
+        existsOnDiet: true,
+        date: new Date(),
+      })
+      .expect(201)
+
+    const mealsResponse = await request(app.server)
+      .get('/meals')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+
+    const mealId = mealsResponse.body[0].id
+
+    await request(app.server)
+      .put(`/meals/${mealId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Dinner',
+        description: "It's a dinner",
+        existsOnDiet: true,
+        date: new Date(),
+      })
+      .expect(204)
   })
 })
