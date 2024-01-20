@@ -1,0 +1,59 @@
+### Variables 
+@apiurl = http://localhost:3333
+@authToken = {{authenticate.response.body.token}}
+
+### Register User
+POST {{apiurl}}/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@email.com",
+  "password": "123456"
+}
+
+### Authenticate
+# @name authenticate
+POST {{apiurl}}/authenticate
+Content-Type: application/json
+
+{
+  "email": "john.doe@email.com",
+  "password": "123456"
+}
+
+### Get All Meals
+# @name getAllMeals
+GET {{apiurl}}/meals
+Authorization: Bearer {{authToken}}
+
+### Register Meal
+# @name registerMeal
+POST {{apiurl}}/meals
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Hot Dog", 
+  "description": "Hot Dog", 
+  "date": "{{$localDatetime iso8601}}", 
+  "existsOnDiet": false
+}
+
+### Delete A Meal
+# @name deleteMeal
+DELETE {{apiurl}}/meals/0c87a8a7-8064-4317-81cb-6f76e97a101b
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### Get A Meal By ID
+# @name getMealById
+GET {{apiurl}}/meals/7c898d4f-d841-4989-b176-5b70c8895d3a
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### Get Statistics
+# @name getStatistics
+GET {{apiurl}}/meals/statistics
+Authorization: Bearer {{authToken}}
+Content-Type: application/json

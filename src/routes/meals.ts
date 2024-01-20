@@ -163,7 +163,7 @@ export async function mealsRoutes(app: FastifyInstance) {
     const [result] = await knex.raw(
       `select max(_count) as bestSequel from (select count(*) as _count from 
         (select meals.*, (row_number() over (order by created_at) - row_number() over (partition by exists_on_diet order by created_at)) as grp 
-        from meals) meals where exists_on_diet = 1 group by grp, exists_on_diet)`,
+        from meals) meals where user_id = '${userId}' and exists_on_diet = 1 group by grp, exists_on_diet)`,
     )
 
     return reply.send({ ...statistics, bestSequel: result.bestSequel })
