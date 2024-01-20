@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { knex } from '../database'
+import { verifyJWT } from '../middlewares/verify-jwt'
 
 const mealBodySchema = z.object({
   name: z.string(),
@@ -11,7 +12,11 @@ const mealBodySchema = z.object({
 })
 
 export async function mealsRoutes(app: FastifyInstance) {
+  app.addHook('onRequest', verifyJWT)
+
   app.post('/', async (request, reply) => {
+    const userId = request.user.sign.sub
+
     const { name, description, date, existsOnDiet } = mealBodySchema.parse(
       request.body,
     )
@@ -22,26 +27,33 @@ export async function mealsRoutes(app: FastifyInstance) {
       description,
       date,
       exists_on_diet: existsOnDiet,
+      user_id: userId,
     })
 
     return reply.status(201).send()
   })
 
-  app.get('/', async (_, reply) => {
-    const meals = await knex('meals').select(
-      'id',
-      'name',
-      'description',
-      'exists_on_diet',
-      'date',
-      'created_at',
-      'updated_at',
-    )
+  app.get('/', async (request, reply) => {
+    const userId = request.user.sign.sub
+
+    const meals = await knex('meals')
+      .select(
+        'id',
+        'name',
+        'description',
+        'exists_on_diet',
+        'date',
+        'created_at',
+        'updated_at',
+      )
+      .where('user_id', userId)
 
     return reply.send(meals)
   })
 
   app.get('/:id', async (request, reply) => {
+    const userId = request.user.sign.sub
+
     const getMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
@@ -59,6 +71,7 @@ export async function mealsRoutes(app: FastifyInstance) {
         'updated_at',
       )
       .where('id', id)
+      .andWhere('user_id', userId)
       .first()
 
     if (!meal) {
@@ -69,13 +82,19 @@ export async function mealsRoutes(app: FastifyInstance) {
   })
 
   app.delete('/:id', async (request, reply) => {
+    const userId = request.user.sign.sub
+
     const deleteMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
 
     const { id } = deleteMealParamsSchema.parse(request.params)
 
-    const mealExists = await knex('meals').select('id').where('id', id).first()
+    const mealExists = await knex('meals')
+      .select('id')
+      .where('id', id)
+      .andWhere('user_id', userId)
+      .first()
 
     if (!mealExists) {
       return reply.status(404).send()
@@ -87,6 +106,8 @@ export async function mealsRoutes(app: FastifyInstance) {
   })
 
   app.put('/:id', async (request, reply) => {
+    const userId = request.user.sign.sub
+
     const updateMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
@@ -97,7 +118,11 @@ export async function mealsRoutes(app: FastifyInstance) {
       request.body,
     )
 
-    const mealExists = await knex('meals').select('id').where('id', id).first()
+    const mealExists = await knex('meals')
+      .select('id')
+      .where('id', id)
+      .andWhere('user_id', userId)
+      .first()
 
     if (!mealExists) {
       return reply.status(404).send()
@@ -117,6 +142,8 @@ export async function mealsRoutes(app: FastifyInstance) {
   })
 
   app.get('/statistics', async (request, reply) => {
+    const userId = request.user.sign.sub
+
     const statistics = await knex('meals')
       .select(knex.raw('count(*) as total'))
       .select(
@@ -130,6 +157,7 @@ export async function mealsRoutes(app: FastifyInstance) {
         ),
       )
       .where(knex.raw(1))
+      .andWhere('user_id', userId)
       .first()
 
     const [result] = await knex.raw(
