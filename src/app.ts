@@ -17,4 +17,4 @@ app.register(fastifyJwt, {
 
 app.register(authenticateRoutes, { prefix: '/authenticate' })
 app.register(mealsRoutes, { prefix: '/meals' })
-app.post('/register', register)
+app.post('/users', register)
