@@ -26,6 +26,24 @@ describe('Meals routes', () => {
         password: '123456',
       })
       .expect(201)
+
+    const authResponse = await request(app.server)
+      .post('/authenticate')
+      .send({ email: 'johndoe@gmail.com', password: '123456' })
+      .expect(200)
+
+    const { token } = authResponse.body
+
+    await request(app.server)
+      .post('/meals')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Breakfast',
+        description: "It's a breakfast",
+        existsOnDiet: true,
+        date: new Date(),
+      })
+      .expect(201)
   })
 
   it('should be able to list all meals from a user', async () => {
