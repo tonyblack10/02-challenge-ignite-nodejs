@@ -18,13 +18,13 @@ export async function authenticateRoutes(app: FastifyInstance) {
       .first()
 
     if (!user) {
-      return reply.status(400).send({ message: 'Authentication Error' })
+      return reply.status(401).send({ message: 'Authentication Error' })
     }
 
     const passwordMatches = await compare(password, user.password_hash)
 
     if (!passwordMatches) {
-      return reply.status(400).send({ message: 'Authentication Error' })
+      return reply.status(401).send({ message: 'Authentication Error' })
     }
 
     try {
@@ -36,7 +36,7 @@ export async function authenticateRoutes(app: FastifyInstance) {
 
       return reply.status(200).send({ token })
     } catch (err) {
-      return reply.status(400).send({ message: 'Authentication Error' })
+      return reply.status(401).send({ message: 'Authentication Error' })
     }
   })
 }
