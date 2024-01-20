@@ -10,7 +10,7 @@
     "dev": "tsx watch src/server.ts",
     "knex": "node --loader tsx ./node_modules/knex/bin/cli.js",
     "lint": "eslint src --ext .ts --fix",
-    "test": "vitest --run"
+    "test": "vitest --run  --no-file-parallelism"
   },
   "keywords": [],
   "author": "",
